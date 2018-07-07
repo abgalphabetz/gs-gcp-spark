@@ -1,0 +1,126 @@
+group 'gs-gcp-spark'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    ext.versions = [
+            kotlin : '1.2.10',
+            spark  : '2.7.1',
+            jackson: '2.9.3',
+            slf4j  : '1.7.21',
+            spek   : '1.1.5',
+            junit  : '1.0.2',
+            google : [
+                    api      : '1.23.0',
+                    datastore: '1.14.0'
+            ]
+    ]
+
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$versions.kotlin"
+        classpath "org.junit.platform:junit-platform-gradle-plugin:$versions.junit"
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.2'
+        classpath 'com.google.cloud.tools:appengine-gradle-plugin:1.+'
+        classpath "gradle.plugin.com.dorongold.plugins:task-tree:1.3"
+    }
+}
+
+apply plugin: 'application'
+apply plugin: 'java'
+apply plugin: 'kotlin'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.google.cloud.tools.appengine'
+apply plugin: "com.dorongold.task-tree"
+apply plugin: 'org.junit.platform.gradle.plugin'
+
+
+mainClassName = 'main.Main'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url 'https://maven-central.storage.googleapis.com' }
+    maven { url "http://dl.bintray.com/jetbrains/spek" }
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$versions.kotlin"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$versions.kotlin"
+
+    compile "com.sparkjava:spark-core:$versions.spark"
+
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:$versions.jackson"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$versions.jackson"
+
+    compile 'org.apache.httpcomponents:httpclient:4.5'
+    compile 'org.apache.httpcomponents:fluent-hc:4.5.3'
+
+    compile "org.slf4j:slf4j-simple:$versions.slf4j"
+    compile "ch.qos.logback:logback-classic:1.2.3"
+
+    compile ("com.google.api-client:google-api-client:$versions.google.api") {
+        exclude group: 'com.google.guava', module: 'guava-jdk5'
+    }
+    compile "com.google.api-client:google-api-client-appengine:$versions.google.api"
+    compile "com.google.api-client:google-api-client-gson:$versions.google.api"
+    compile "com.google.cloud:google-cloud-datastore:$versions.google.datastore"
+
+    compile 'com.google.guava:guava:23.0'
+    compile 'com.google.code.gson:gson:2.8.2'
+
+    testCompile 'com.google.appengine:appengine-testing:1.9.60'
+    testCompile 'com.google.appengine:appengine-api-1.0-sdk:1.9.60'
+    testCompile 'com.google.appengine:appengine-api-stubs:1.9.60'
+//    testCompile 'com.google.appengine:appengine-tools-api:1.9.60'
+    testCompile 'com.google.appengine:appengine-api-labs:1.9.60'
+    testCompile 'org.assertj:assertj-core:3.8.0'
+    testCompile "org.jetbrains.spek:spek-api:$versions.spek"
+    testRuntime "org.jetbrains.spek:spek-junit-platform-engine:$versions.spek"
+    testRuntime "org.junit.platform:junit-platform-launcher:$versions.junit"
+//    testCompile 'junit:junit:4.12'
+}
+
+junitPlatform {
+    filters {
+        engines {
+            include 'spek'
+        }
+    }
+}
+
+kotlin {
+    experimental {
+        coroutines "enable"
+    }
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+appengine {
+    stage {
+        artifact = "build/libs/$name-$version-all.jar"
+    }
+
+    deploy {   // deploy configuration
+        stopPreviousVersion = true  // default - stop the current version
+        promote = true              // default - & make this the current version
+    }
+}
+

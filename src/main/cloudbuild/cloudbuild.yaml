@@ -1,0 +1,19 @@
+steps:
+- name: 'gcr.io/cloud-builders/gradle'
+  args: ['appengineStage']
+  dir: 'ants-nests-spark'
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'asia.gcr.io/$PROJECT_ID/appengine/${_SERVICE_NAME}.$BUILD_ID:latest', '.']
+  dir: 'ants-nests-spark/build/staged-app'
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ["push", "asia.gcr.io/$PROJECT_ID/appengine/${_SERVICE_NAME}.$BUILD_ID:latest"]
+  dir: 'ants-nests-spark/build/staged-app'
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - app
+  - deploy
+  - --image-url=asia.gcr.io/$PROJECT_ID/appengine/${_SERVICE_NAME}.$BUILD_ID:latest
+  dir: 'ants-nests-spark/build/staged-app'
